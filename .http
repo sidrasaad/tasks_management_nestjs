@@ -1,0 +1,98 @@
+###variables
+@baseUrl=http://localhost:3000
+
+@contentType=application/json
+
+###The basic request
+GET {{baseUrl}}
+
+###Get all tasks
+GET {{baseUrl}}/tasks/
+
+###Get task by id
+GET {{baseUrl}}/tasks/{{taskId}}
+
+
+###Create new task
+# @name createTask
+POST {{baseUrl}}/tasks
+Content-Type: {{contentType}}
+
+{
+    "title": "Learn NestJS",
+    "description": "Complete NestJS course with Auth, Database and more",
+    "status": "OPEN",
+    "userId": "5fd51b0f-c2fb-4b06-8d03-36d87d94244f",
+    "labels": [
+        {
+            "name": "Urgent"
+        }
+    ]
+}
+
+### Set the task Id
+@taskId={{createTask.response.body.id}}
+
+###Vlidation rule
+POST {{baseUrl}}/tasks
+Content-Type: {{contentType}}
+
+{
+    "title": null,
+    "description": "Complete NestJS course with Auth, Database and more",
+    "status": "xxx"
+}
+
+###Update the task status
+# PATCH {{baseUrl}}/tasks/30eb728d-24c1-4d23-8eec-0210c93717bb/status
+# Content-Type: {{contentType}}
+
+# {
+#     "status": "DONE"
+# }
+
+###Update the task status an if we are giving labels then it will remove the previous labels and create new labels 
+PATCH {{baseUrl}}/tasks/{{taskId}}
+Content-Type: {{contentType}}
+
+{
+    "status": "IN_PROGRESS",
+     "labels": [
+        {
+            "name": "1st Generated Task"
+        },
+        {
+            "name": "1st Generated Task"
+        }
+
+    ]
+}
+
+###Delete the task
+DELETE  {{baseUrl}}/tasks/{{taskId}}
+Content-Type: {{contentType}}
+
+
+
+### Add specific labels to task
+# @name addLabels
+POST {{baseUrl}}/tasks/{{taskId}}/labels
+Content-Type: {{contentType}}
+
+[
+  {"name": "prioritized"},
+  {"name": "bug"}
+]
+
+
+### Remobe specific labels from task
+# @name removeLabels
+DELETE {{baseUrl}}/tasks/{{taskId}}/labels
+Content-Type: {{contentType}}
+
+[
+  "prioritized",
+  "bug"
+]
+
+
