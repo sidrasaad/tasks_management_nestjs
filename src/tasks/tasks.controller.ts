@@ -10,25 +10,40 @@ import {
   HttpStatus,
   HttpCode,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './create-task.dto';
-import { FineOneParams } from './fine-one.params';
+import { FindOneParams } from './find-one.params';
 import { UpdateTaskDto } from './update-task..dto';
 import { WrongTaskStatusException } from './exceptions/wrong-task-status.exception';
 import { Task } from './task.entity';
 import { CreateTaskLabelDto } from './create-task-label.dto';
+import { FindTaskParams } from './find-task-params';
+import { PaginationParams } from 'src/common/pagination.params';
+import { PaginationResponse } from 'src/common/pagination.response';
 
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
+
   @Get()
-  public async findall(): Promise<Task[]> {
-    return await this.tasksService.findAll();
+  public async findAll(
+    @Query() filters: FindTaskParams,
+    @Query() pagination: PaginationParams,
+  ): Promise<PaginationResponse<Task>> {
+    const [items, total] = await this.tasksService.findAll(filters, pagination);
+    return {
+      data: items,
+      meta: {
+        total,
+        ...pagination,
+      },
+    };
   }
 
   @Get('/:id')
-  public async findOne(@Param() params: FineOneParams): Promise<Task> {
+  public async findOne(@Param() params: FindOneParams): Promise<Task> {
     return await this.findOneOrFail(params.id);
   }
 
@@ -39,7 +54,7 @@ export class TasksController {
 
   @Patch('/:id')
   public async updateTask(
-    @Param() params: FineOneParams,
+    @Param() params: FindOneParams,
     @Body() updateTaskDto: UpdateTaskDto,
   ): Promise<Task> {
     const task = await this.findOneOrFail(params.id);
@@ -55,7 +70,7 @@ export class TasksController {
 
   @Delete('/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  public async deleteTask(@Param() params: FineOneParams): Promise<void> {
+  public async deleteTask(@Param() params: FindOneParams): Promise<void> {
     const task = await this.findOneOrFail(params.id);
     await this.tasksService.deleteTask(task);
   }
@@ -70,7 +85,7 @@ export class TasksController {
 
   @Post('/:id/labels')
   async addLabels(
-    @Param() { id }: FineOneParams,
+    @Param() { id }: FindOneParams,
     @Body() labels: CreateTaskLabelDto[],
   ): Promise<Task> {
     const task = await this.findOneOrFail(id);
@@ -80,7 +95,7 @@ export class TasksController {
   @Delete('/:id/labels')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeLabels(
-    @Param() { id }: FineOneParams,
+    @Param() { id }: FindOneParams,
     @Body() labelNames: string[],
   ): Promise<void> {
     const task = await this.findOneOrFail(id);

@@ -7,7 +7,32 @@
 GET {{baseUrl}}
 
 ###Get all tasks
-GET {{baseUrl}}/tasks/
+# @name getAllTasks
+GET {{baseUrl}}/tasks?limit=2&offset=2
+
+###Get all in progress tasks
+# @name getAllInProgressTasks
+GET {{baseUrl}}/tasks?status=IN_PROGRESS
+
+###Get all with search query
+# @name getAllWithSearchQuery
+GET {{baseUrl}}/tasks?search=tho
+
+
+###Get all filtered by kabels
+# @name getAllFilteredByLabels
+## currently labels are also filterin
+GET {{baseUrl}}/tasks?labels=Urgent,Prioritze
+
+###Get all sorted by title
+# @name getAllSorted
+## currently labels are also filterin
+GET {{baseUrl}}/tasks?sortBy=createdAt&sortOrder=DESC
+
+###Get all sorted by title
+# @name getAllSortedByT itle
+## currently labels are also filterin
+GET {{baseUrl}}/tasks?sortBy=status&sortOrder=DESC
 
 ###Get task by id
 GET {{baseUrl}}/tasks/{{taskId}}

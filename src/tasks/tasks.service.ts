@@ -3,11 +3,13 @@ import { TaskStatus } from './task.model';
 import { CreateTaskDto } from './create-task.dto';
 import { UpdateTaskDto } from './update-task..dto';
 import { WrongTaskStatusException } from './exceptions/wrong-task-status.exception';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Like, Repository } from 'typeorm';
 import { Task } from './task.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TaskLabel } from './task-label.entity';
 import { CreateTaskLabelDto } from './create-task-label.dto';
+import { FindTaskParams } from './find-task-params';
+import { PaginationParams } from 'src/common/pagination.params';
 
 @Injectable()
 export class TasksService {
@@ -18,8 +20,58 @@ export class TasksService {
     private readonly labelsRepository: Repository<TaskLabel>,
   ) {}
 
-  public async findAll(): Promise<Task[]> {
-    return await this.taskRepository.find();
+  public async findAll(
+    filters: FindTaskParams,
+    pagination: PaginationParams,
+  ): Promise<[Task[], number]> {
+    //1) Query Builder Method
+    const query = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.labels', 'labels');
+
+    if (filters.status) {
+      query.andWhere('task.status = :status', { status: filters.status });
+    }
+    if (filters.search?.trim()) {
+      query.andWhere(
+        'task.title ILIKE :search OR task.description ILIKE :search',
+        { search: `%${filters.search}%` },
+      );
+    }
+
+    if (filters.labels?.length) {
+      const subQuery = query
+        .subQuery()
+        .select('labels.taskId')
+        .from('task_label', 'labels')
+        .where('labels.name IN (:...names)', { names: filters.labels })
+        .getQuery();
+
+      query.andWhere(`task.id IN ${subQuery}`);
+    }
+
+    query.orderBy(`task.${filters.sortBy}`, filters.sortOrder);
+    query.skip(pagination.offset).take(pagination.limit);
+
+    console.log(query.getSql());
+    return query.getManyAndCount();
+
+    //2) this way of query is pretty limited as it check in both title and description
+    //instead use query builder
+    // const where: FindOptionsWhere<Task> = {};
+    // if (filters.status) {
+    //   where.status = filters.status;
+    // }
+    // if (filters.search?.trim()) {
+    //   where.title = Like(`%${filters.search}%`);
+    //   where.description = Like(`%${filters.search}%`);
+    // }
+    // return await this.taskRepository.findAndCount({
+    //   where,
+    //   relations: ['labels'],
+    //   skip: pagination.offset,
+    //   take: pagination.limit,
+    // });
   }
 
   public async findOne(id: string): Promise<Task | null> {
